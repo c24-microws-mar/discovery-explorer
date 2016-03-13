@@ -1,0 +1,23 @@
+{
+  "name": "discovery-explorer",
+  "version": "1.0.0",
+  "description": "A simple Consul discovery explorer.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spartakiade2016/discovery-explorer.git"
+  },
+  "author": "mike@mikebild.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spartakiade2016/discovery-explorer/issues"
+  },
+  "homepage": "https://github.com/spartakiade2016/discovery-explorer#readme",
+  "dependencies": {
+    "express": "^4.13.4",
+    "multiagent": "^1.0.2"
+  }
+}
