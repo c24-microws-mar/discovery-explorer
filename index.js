@@ -1,7 +1,7 @@
 'use strict';
 
 const SERVICE_PORT              = process.env.SERVICE_PORT || '8080';
-const DISCOVERY_URLS            = (process.env.DISCOVERY_URLS || '').split(',').concat(['http://46.101.175.234:8500']);
+const DISCOVERY_URLS            = (process.env.DISCOVERY_URLS || '').split(',').concat(['http://46.101.251.23:8500']);
 const DISCOVERY_IGNORE_NAMES    = (process.env.DISCOVERY_IGNORE_NAMES || '').split(',').concat(['weave','consul']);
 
 const agent     = require('multiagent');
