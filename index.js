@@ -1,8 +1,8 @@
 'use strict';
 
-const SERVICE_PORT      = process.env.SERVICE_PORT || '8080';
-const DISCOVERY_URLS    = process.env.DISCOVERY_URLS.split(',') || ['http://46.101.175.234:8500'];
-console.log(DISCOVERY_URLS)
+const SERVICE_PORT              = process.env.SERVICE_PORT || '8080';
+const DISCOVERY_URLS            = (process.env.DISCOVERY_URLS || '').split(',').concat(['http://46.101.175.234:8500']);
+const DISCOVERY_IGNORE_NAMES    = (process.env.DISCOVERY_IGNORE_NAMES || '').split(',').concat(['weave','consul']);
 
 const agent     = require('multiagent');
 const express   = require('express');
@@ -30,6 +30,13 @@ app.get('/', (req, res) => {
           return results.reduce((state, result) => {
 
             result.body.forEach(service => {
+
+              //ignore special service names
+              const ignores = DISCOVERY_IGNORE_NAMES
+                .filter(x => service.ServiceName.indexOf(x) !== -1)
+                .filter(x => x);
+              if(ignores.length) return;
+
               service.ServiceTags = service.ServiceTags || [];
 
               if(!state[service.ServiceName]) state[service.ServiceName] = {};
