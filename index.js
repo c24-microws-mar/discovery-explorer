@@ -53,6 +53,21 @@ app.get('/', (req, res) => {
 
           }, {});
         })
+        .then(services => {
+          return Object.keys(services).map(key => services[key]).reduce((p, svc) => {
+
+            svc.service_endpoints = [];
+
+            return p.then(() => Promise.all(svc.service_urls.map(url => {
+              return agent
+                .get(`${url}/endpoints`)
+                .timeout(500)
+                .then(res => svc.service_endpoints = svc.service_endpoints.concat(res.body))
+                .catch(err => console.log(`Cannot get ${url}/endpoints (${err.status || err})`));
+            })));
+
+          }, Promise.resolve()).then(() => services);
+        })
         .then(services => res.send(services))
         .catch(error => res.send({error: error.message}));
 
