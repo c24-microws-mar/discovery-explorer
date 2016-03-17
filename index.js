@@ -1,8 +1,8 @@
 'use strict';
 
-const SERVICE_PORT      = process.env.SERVICE_PORT || '8080';
-const DISCOVERY_URLS    = process.env.DISCOVERY_URLS.split(',') || ['http://46.101.175.234:8500'];
-console.log(DISCOVERY_URLS)
+const SERVICE_PORT              = process.env.SERVICE_PORT || '8080';
+const DISCOVERY_URLS            = (process.env.DISCOVERY_URLS || '').split(',').concat(['http://46.101.251.23:8500']);
+const DISCOVERY_IGNORE_NAMES    = (process.env.DISCOVERY_IGNORE_NAMES || '').split(',').concat(['weave','consul']);
 
 const agent     = require('multiagent');
 const express   = require('express');
@@ -16,8 +16,13 @@ app.get('/', (req, res) => {
     .type('json')
     .promise()
     .then(result => {
-
-      const services = Object.keys(result.body).map(key => {
+      const services = Object.keys(result.body)
+      .filter(key => {
+        return !DISCOVERY_IGNORE_NAMES
+                .filter(x => key.indexOf(x) !== -1)
+                .filter(x => x).length;
+      })
+      .map(key => {
         return client
           .get(`/v1/catalog/service/${key}`)
           .type('json')
@@ -54,19 +59,32 @@ app.get('/', (req, res) => {
           }, {});
         })
         .then(services => {
-          return Object.keys(services).map(key => services[key]).reduce((p, svc) => {
-
-            svc.service_endpoints = [];
-
-            return p.then(() => Promise.all(svc.service_urls.map(url => {
+          return Object.keys(services).map(key => services[key]).reduce((promise, svc) => {
+            svc.service_endpoint_urls = [];
+            return promise.then(() => Promise.all(svc.service_urls.map(url => {
               return agent
                 .get(`${url}/endpoints`)
                 .timeout(500)
-                .then(res => svc.service_endpoints = svc.service_endpoints.concat(res.body))
+                .then(res => {
+
+                  return svc.service_endpoint_urls = Object.keys(res.body)
+                    .filter(x => x !== '*' && x !== '/')
+                    .map(endpoint => svc.service_urls.map(url => url + endpoint),'')
+                    .reduce((all, next) => all.concat(next), []);
+
+                })
                 .catch(err => console.log(`Cannot get ${url}/endpoints (${err.status || err})`));
             })));
 
-          }, Promise.resolve()).then(() => services);
+          }, Promise.resolve()).then(() => {
+            for(var idx in services) {
+              var service = services[idx];
+              service.service_urls = service.service_urls.concat(service.service_endpoint_urls);
+              delete service.service_endpoint_urls;
+            }
+
+            return services;
+          });
         })
         .then(services => res.send(services))
         .catch(error => res.send({error: error.message}));
