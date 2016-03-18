@@ -35,6 +35,13 @@ app.get('/', (req, res) => {
           return results.reduce((state, result) => {
 
             result.body.forEach(service => {
+
+              //ignore special service names
+              const ignores = DISCOVERY_IGNORE_NAMES
+                .filter(x => service.ServiceName.indexOf(x) !== -1)
+                .filter(x => x);
+              if(ignores.length) return;
+
               service.ServiceTags = service.ServiceTags || [];
 
               if(!state[service.ServiceName]) state[service.ServiceName] = {};
