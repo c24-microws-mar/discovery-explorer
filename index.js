@@ -1,8 +1,24 @@
 'use strict';
 
 const SERVICE_PORT              = process.env.SERVICE_PORT || '8080';
-const DISCOVERY_URLS            = (process.env.DISCOVERY_URLS || '').split(',').concat(['http://46.101.251.23:8500']);
-const DISCOVERY_IGNORE_NAMES    = (process.env.DISCOVERY_IGNORE_NAMES || '').split(',').concat(['weave','consul']);
+const DISCOVERY_IGNORE_NAMES    = (process.env.DISCOVERY_IGNORE_NAMES || '').split(',')
+  .concat([
+    'weave',
+    'consul',
+    'shipyard',
+    'registry',
+    'docker-proxy',
+    'docker-registry-frontend-80',
+    'etcd-4001',
+    'etcd-7001',
+    'example-service',
+    'example-web',
+    'people-service',
+    'discovery-explorer'
+  ]);
+const DISCOVERY_URLS            = process.env.DISCOVERY_URLS
+  ? process.env.DISCOVERY_URLS.split(',')
+  : ['http://46.101.245.190:8500', 'http://46.101.132.55:8500', 'http://46.101.193.82:8500'];
 
 const agent     = require('multiagent');
 const express   = require('express');
