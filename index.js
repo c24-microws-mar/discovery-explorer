@@ -16,8 +16,13 @@ app.get('/', (req, res) => {
     .type('json')
     .promise()
     .then(result => {
-
-      const services = Object.keys(result.body).map(key => {
+      const services = Object.keys(result.body)
+      .filter(key => {
+        return !DISCOVERY_IGNORE_NAMES
+                .filter(x => key.indexOf(x) !== -1)
+                .filter(x => x).length;
+      })
+      .map(key => {
         return client
           .get(`/v1/catalog/service/${key}`)
           .type('json')
@@ -59,6 +64,34 @@ app.get('/', (req, res) => {
             return state;
 
           }, {});
+        })
+        .then(services => {
+          return Object.keys(services).map(key => services[key]).reduce((promise, svc) => {
+            svc.service_endpoint_urls = [];
+            return promise.then(() => Promise.all(svc.service_urls.map(url => {
+              return agent
+                .get(`${url}/endpoints`)
+                .timeout(500)
+                .then(res => {
+
+                  return svc.service_endpoint_urls = Object.keys(res.body)
+                    .filter(x => x !== '*' && x !== '/')
+                    .map(endpoint => svc.service_urls.map(url => url + endpoint),'')
+                    .reduce((all, next) => all.concat(next), []);
+
+                })
+                .catch(err => console.log(`Cannot get ${url}/endpoints (${err.status || err})`));
+            })));
+
+          }, Promise.resolve()).then(() => {
+            for(var idx in services) {
+              var service = services[idx];
+              service.service_urls = service.service_urls.concat(service.service_endpoint_urls);
+              delete service.service_endpoint_urls;
+            }
+
+            return services;
+          });
         })
         .then(services => res.send(services))
         .catch(error => res.send({error: error.message}));
